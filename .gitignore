@@ -3,6 +3,7 @@
 
 # Maven
 target/
+.m2-repository/
 
 # IntelliJ IDEA (regenerated on import — do not commit)
 .idea/

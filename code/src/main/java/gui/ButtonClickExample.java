@@ -34,8 +34,9 @@ public class ButtonClickExample {
 
           JPanel buttonPanel = new JPanel();
           JButton submit = new JButton("Submit");
+          JButton cancel = new JButton("Cancel");
           buttonPanel.add(submit);
-          buttonPanel.add(new JButton("Cancel"));
+          buttonPanel.add(cancel);
 
           submit.addActionListener(
               new ActionListener() {
@@ -45,6 +46,12 @@ public class ButtonClickExample {
                   String lastName = lastNameField.getText();
                   JOptionPane.showMessageDialog(null, "Hello " + firstName + " " + lastName);
                 }
+              });
+
+          cancel.addActionListener(
+              event -> {
+                firstNameField.setText("");
+                lastNameField.setText("");
               });
 
           JPanel mainPanel = new JPanel();
