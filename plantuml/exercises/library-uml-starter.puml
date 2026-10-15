@@ -3,43 +3,97 @@ skinparam dpi 150
 skinparam classAttributeIconSize 0
 hide empty members
 
-' Your task (Chapter 8, Question 1): draw the UML class diagram for the library
-' specification — items, books, DVDs, reference-only items, members, librarians,
-' and holds.
-'
-' Define each type as a box, then connect them with the right arrows. One box
-' (Item) is filled in as an example — decide on the rest yourself. There is more
-' than one defensible answer.
-'
-' PlantUML cheat-sheet:
-'   interface Name { + method() : Type }
-'   abstract class Name { # field : Type }
-'   class Name { - field : Type }
-'   Parent    <|-- Child    ' generalization: Child extends Parent
-'   Interface <|.. Class    ' realization:    Class implements Interface
-' (Putting the parent/interface on the LEFT of the arrow keeps it on top, which
-'  is the convention used in these notes.)
+' Chapter 8 solution. Each Item represents a physical copy with a unique number.
 
 abstract class Item {
   - title : String
   - catalogueNumber : String
+  - kind : ItemKind
   + getTitle() : String
   + getCatalogueNumber() : String
 }
 
-' TODO: add boxes for Book and DVD. What differs between them — a whole class,
-'       or just the value of a loan-period field?
+enum ItemKind {
+  BOOK
+  DVD
+}
 
-' TODO: reference-only items cannot be borrowed at all. Decide how to say that
-'       in the diagram: a subclass, or an interface (e.g. "Borrowable") that
-'       only some items realize?
+interface Borrowable {
+  + getLoanPeriodDays() : int
+  + isOnLoan() : boolean
+  + borrow(member : Member, today : LocalDate) : Loan
+  + returnItem() : void
+}
 
-' TODO: add Member and Librarian. What do they have in common? Add the common
-'       supertype if you think one is warranted.
+class LoanableItem {
+  - loanPeriodDays : int
+  - activeLoan : Loan
+  + getLoanPeriodDays() : int
+  + isOnLoan() : boolean
+  + borrow(member : Member, today : LocalDate) : Loan
+  + returnItem() : void
+}
 
-' TODO: add whatever represents a hold, and connect it to the classes that need
-'       to know about it.
+class ReferenceItem
 
-' TODO: add the arrows between all of your types.
+class Member {
+  - memberNumber : String
+  - lateFee : BigDecimal
+  + waiveLateFee() : void
+}
+
+class Librarian {
+  + addItem(library : Library, item : Item) : void
+  + waiveLateFee(member : Member) : void
+}
+
+class Loan {
+  - dueDate : LocalDate
+}
+
+class Hold {
+  - placedAt : Instant
+}
+
+class Library {
+  - catalogue : Map<String, Item>
+  - members : Map<String, Member>
+  - holds : List<Hold>
+  + login(memberNumber : String) : Member
+  + findItem(catalogueNumber : String) : Item
+  + addItem(item : Item) : void
+  + borrow(member : Member, item : LoanableItem, today : LocalDate) : Loan
+  + placeHold(member : Member, catalogueNumber : String) : Hold
+}
+
+Item <|-- LoanableItem
+Item <|-- ReferenceItem
+Borrowable <|.. LoanableItem
+Item --> ItemKind
+Library "1" o-- "0..*" Item : catalogue
+Library "1" o-- "0..*" Member : registered members
+Library "1" *-- "0..*" Hold : remembers
+LoanableItem "1" --> "0..1" Loan : active loan
+Loan "0..*" --> "1" Member : borrower
+Hold "0..*" --> "1" Member : requester
+Hold "0..*" --> "1" LoanableItem : requested copy
+Librarian ..> Library : adds items
+Librarian ..> Member : waives fees
+
+note right of LoanableItem
+  BOOK: 21 days; DVD: 7 days.
+  borrow rejects an existing active loan.
+  isOnLoan iff activeLoan is present.
+  returnItem clears the active loan.
+end note
+
+note bottom of Library
+  addItem rejects duplicate catalogue numbers.
+  placeHold requires a registered, signed-in member
+  and a catalogue item that is loanable and on loan.
+  A successful hold is appended to holds.
+  login resolves the supplied member number;
+  additional authentication rules are unspecified.
+end note
 
 @enduml
